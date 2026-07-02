@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "description": "Bundled Mock AI knowledge base. The MockAIAdapter grounds answers on the assistant's own documents first, then falls back to these general domain entries.",
+  "entries": [
+    {
+      "id": "kb-hr-pto",
+      "domain": "HR",
+      "title": "Paid Time Off",
+      "content": "Full-time employees accrue 20 paid vacation days per year plus 10 public holidays. Unused vacation carries over up to 5 days into the next year. Requests should be submitted at least two weeks in advance."
+    },
+    {
+      "id": "kb-hr-remote",
+      "domain": "HR",
+      "title": "Remote Work",
+      "content": "Employees may work remotely up to 3 days per week with manager approval. A home-office stipend of $200 is provided annually to support remote setups."
+    },
+    {
+      "id": "kb-hr-benefits",
+      "domain": "HR",
+      "title": "Benefits",
+      "content": "The company offers health, dental, and vision insurance. A 401(k) retirement plan matches employee contributions up to 5% of salary. Open enrollment happens each November."
+    },
+    {
+      "id": "kb-finance-expenses",
+      "domain": "Finance",
+      "title": "Expense Reimbursement",
+      "content": "Business expenses are reimbursed within 14 days of an approved report. Receipts are required for any expense over $25. Travel meals are capped at $75 per day."
+    },
+    {
+      "id": "kb-finance-invoices",
+      "domain": "Finance",
+      "title": "Invoice Payment Terms",
+      "content": "Standard vendor payment terms are Net 30. Early payment discounts of 2% apply if invoices are paid within 10 days. Purchase orders are required for amounts above $1,000."
+    },
+    {
+      "id": "kb-it-password",
+      "domain": "IT",
+      "title": "Password Policy",
+      "content": "Passwords must be at least 12 characters and are rotated every 90 days. Multi-factor authentication is required for all corporate accounts. Report lost devices to IT immediately."
+    },
+    {
+      "id": "kb-it-vpn",
+      "domain": "IT",
+      "title": "VPN Access",
+      "content": "Remote access to internal systems requires the corporate VPN. Install the VPN client from the IT portal and authenticate with your SSO credentials and MFA."
+    },
+    {
+      "id": "kb-travel-booking",
+      "domain": "Travel",
+      "title": "Travel Booking",
+      "content": "All business travel must be booked through the approved travel portal. Economy class is standard for flights under 6 hours. Hotel rates should not exceed $250 per night without approval."
+    },
+    {
+      "id": "kb-support-sla",
+      "domain": "Support",
+      "title": "Support SLA",
+      "content": "Priority 1 incidents are responded to within 1 hour, Priority 2 within 4 hours, and Priority 3 within one business day. Support is available 24/7 for critical outages."
+    },
+    {
+      "id": "kb-sales-discount",
+      "domain": "Sales",
+      "title": "Discount Approval",
+      "content": "Sales representatives may offer discounts up to 10% without approval. Discounts between 10% and 25% require manager sign-off. Anything above 25% requires VP approval."
+    },
+    {
+      "id": "kb-legal-nda",
+      "domain": "Legal",
+      "title": "NDA Policy",
+      "content": "A mutual non-disclosure agreement must be signed before sharing confidential information with external parties. NDAs are valid for 3 years unless otherwise specified."
+    }
+  ]
+}

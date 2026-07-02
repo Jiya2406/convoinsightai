@@ -1,0 +1,359 @@
+// ─────────────────────────────────────────────────────────────
+// ConvoInsight AI — Prisma Schema (Phase 3)
+// Normalized PostgreSQL design derived from the Phase 2 ER diagram.
+// ─────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────────────────────── Enums ─────────────────────────────
+
+enum RoleName {
+  ADMIN
+  REVIEWER
+  ANALYST
+}
+
+enum ProviderKey {
+  MOCK
+  GEMINI
+  OPENAI
+  CLAUDE
+  DEEPSEEK
+  LLAMA
+  AZURE_OPENAI
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+}
+
+enum DocumentType {
+  JSON
+  TEXT
+  PDF
+}
+
+enum FeedbackType {
+  UP
+  DOWN
+}
+
+enum GovernanceRuleType {
+  BANNED_WORD
+  PII
+  GROUNDING
+  THRESHOLD
+}
+
+enum GovernanceAction {
+  FLAG
+  BLOCK
+}
+
+enum GovernanceStatus {
+  PASS
+  FLAG
+  BLOCK
+}
+
+enum PromptVariant {
+  A
+  B
+}
+
+enum EvaluatorKind {
+  MOCK
+  GEMINI
+}
+
+// ───────────────────────────── RBAC ──────────────────────────────
+
+model Role {
+  id          String   @id @default(cuid())
+  name        RoleName @unique
+  description String?
+  permissions Json     @default("[]") // list of permission keys
+  users       User[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String
+  passwordHash  String
+  roleId        String
+  role          Role           @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  isActive      Boolean        @default(true)
+  conversations Conversation[]
+  feedback      Feedback[]
+  auditLogs     AuditLog[]
+  notifications Notification[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([roleId])
+  @@index([email])
+}
+
+// ─────────────────────────── Providers ───────────────────────────
+
+model Provider {
+  id         String      @id @default(cuid())
+  key        ProviderKey @unique
+  name       String
+  isActive   Boolean     @default(false)
+  isScaffold Boolean     @default(true) // true = interface stub, not fully wired
+  config     Json        @default("{}")
+  assistants Assistant[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+// ─────────────────────────── Assistants ──────────────────────────
+
+model Assistant {
+  id             String              @id @default(cuid())
+  name           String
+  domain         String // HR | Finance | Legal | Travel | Support | Sales ...
+  description    String?
+  systemPrompt   String
+  providerId     String
+  provider       Provider            @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  model          String              @default("mock-1")
+  temperature    Float               @default(0.7)
+  isActive       Boolean             @default(true)
+  conversations  Conversation[]
+  knowledge      Knowledge[]
+  promptTests    PromptTest[]
+  rules          GovernanceRule[]
+  snapshots      AnalyticsSnapshot[]
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@index([providerId])
+  @@index([domain])
+  @@index([isActive])
+}
+
+// ─────────────────────── Knowledge Management ────────────────────
+
+model Knowledge {
+  id          String     @id @default(cuid())
+  assistantId String
+  assistant   Assistant  @relation(fields: [assistantId], references: [id], onDelete: Cascade)
+  name        String
+  version     Int        @default(1)
+  isActive    Boolean    @default(true)
+  documents   Document[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@unique([assistantId, version])
+  @@index([assistantId])
+}
+
+model Document {
+  id          String       @id @default(cuid())
+  knowledgeId String
+  knowledge   Knowledge    @relation(fields: [knowledgeId], references: [id], onDelete: Cascade)
+  type        DocumentType @default(TEXT)
+  title       String
+  content     String       @db.Text
+  metadata    Json         @default("{}")
+  createdAt   DateTime     @default(now())
+
+  @@index([knowledgeId])
+  @@index([type])
+}
+
+// ───────────────────── Conversations & Messages ──────────────────
+
+model Conversation {
+  id          String    @id @default(cuid())
+  assistantId String
+  assistant   Assistant @relation(fields: [assistantId], references: [id], onDelete: Cascade)
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  title       String    @default("Untitled conversation")
+  messages    Message[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([assistantId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Message {
+  id                 String           @id @default(cuid())
+  conversationId     String
+  conversation       Conversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role               MessageRole
+  content            String           @db.Text
+  tokens             Int              @default(0)
+  latencyMs          Int              @default(0)
+  sources            Json             @default("[]") // grounded source references
+  governanceStatus   GovernanceStatus @default(PASS)
+  governanceReasons  Json             @default("[]")
+  evaluation         Evaluation?
+  feedback           Feedback[]
+  createdAt          DateTime         @default(now())
+
+  @@index([conversationId])
+  @@index([role])
+  @@index([createdAt])
+}
+
+// ───────────────────────── Evaluation ────────────────────────────
+
+model Evaluation {
+  id                String        @id @default(cuid())
+  messageId         String        @unique
+  message           Message       @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  accuracy          Float         @default(0)
+  relevance         Float         @default(0)
+  completeness      Float         @default(0)
+  hallucinationRisk Float         @default(0)
+  confidence        Float         @default(0)
+  latencyMs         Int           @default(0)
+  responseLength    Int           @default(0)
+  groundedSource    Boolean       @default(false)
+  sourceReference   Json          @default("[]")
+  correctnessScore  Float         @default(0)
+  evaluator         EvaluatorKind @default(MOCK)
+  createdAt         DateTime      @default(now())
+
+  @@index([messageId])
+  @@index([evaluator])
+}
+
+// ──────────────────── Prompt Studio / Testing ────────────────────
+
+model PromptTest {
+  id          String             @id @default(cuid())
+  assistantId String
+  assistant   Assistant          @relation(fields: [assistantId], references: [id], onDelete: Cascade)
+  name        String             @default("Prompt A/B test")
+  promptA     String             @db.Text
+  promptB     String             @db.Text
+  input       String             @db.Text
+  winner      PromptVariant?
+  results     PromptTestResult[]
+  createdAt   DateTime           @default(now())
+
+  @@index([assistantId])
+  @@index([createdAt])
+}
+
+model PromptTestResult {
+  id           String        @id @default(cuid())
+  promptTestId String
+  promptTest   PromptTest    @relation(fields: [promptTestId], references: [id], onDelete: Cascade)
+  variant      PromptVariant
+  output       String        @db.Text
+  metrics      Json          @default("{}") // full evaluation snapshot
+  createdAt    DateTime      @default(now())
+
+  @@index([promptTestId])
+}
+
+// ───────────────────────────── Feedback ──────────────────────────
+
+model Feedback {
+  id        String       @id @default(cuid())
+  messageId String
+  message   Message      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  type      FeedbackType
+  comment   String?      @db.Text
+  createdAt DateTime     @default(now())
+
+  @@index([messageId])
+  @@index([userId])
+  @@index([type])
+}
+
+// ─────────────────────── Governance Engine ───────────────────────
+
+model GovernanceRule {
+  id          String             @id @default(cuid())
+  assistantId String?
+  assistant   Assistant?         @relation(fields: [assistantId], references: [id], onDelete: Cascade)
+  name        String
+  type        GovernanceRuleType
+  config      Json               @default("{}") // e.g. { words: [...] } or { maxHallucination: 40 }
+  action      GovernanceAction   @default(FLAG)
+  isActive    Boolean            @default(true)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([assistantId])
+  @@index([type])
+}
+
+// ───────────────────────── Analytics ─────────────────────────────
+
+model AnalyticsSnapshot {
+  id          String    @id @default(cuid())
+  assistantId String?
+  assistant   Assistant? @relation(fields: [assistantId], references: [id], onDelete: Cascade)
+  periodDate  DateTime // day the snapshot represents
+  metrics     Json      @default("{}")
+  createdAt   DateTime  @default(now())
+
+  @@unique([assistantId, periodDate])
+  @@index([periodDate])
+}
+
+// ───────────────────────────── Settings ──────────────────────────
+
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json     @default("{}")
+  updatedAt DateTime @updatedAt
+}
+
+// ───────────────────────────── Audit Log ─────────────────────────
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String // e.g. "assistant.create"
+  entity    String // e.g. "Assistant"
+  entityId  String?
+  meta      Json     @default("{}")
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([entity])
+  @@index([createdAt])
+}
+
+// ─────────────────────────── Notifications ───────────────────────
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  type      String // e.g. "HALLUCINATION_SPIKE"
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+}
