@@ -25,7 +25,6 @@
 | **Auth** | Auth.js / NextAuth v5 (Credentials + JWT) + RBAC |
 | **Validation** | Zod |
 | **AI Providers** | Adapter pattern — **Mock** (default) + **Google Gemini** (free tier); OpenAI/Claude/DeepSeek/Llama/Azure scaffolded |
-| **Deployment** | Vercel + Neon |
 
 ---
 
