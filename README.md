@@ -6,9 +6,9 @@
 
 ## 👥 Team
 
-- **Team Name:** _<Syntax Girls>_
-- **Team Members:** _<Jiya Kothari, Vishwa Bhalodiya>_
-- **College Name:** _<Charusat University>_
+- **Team Name:** Syntax Girls
+- **Team Members:** Jiya Kothari, Vishwa Bhalodiya
+- **College Name:** Charusat University
 
 ---
 
