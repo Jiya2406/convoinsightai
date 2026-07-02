@@ -2,15 +2,13 @@
 
 **Enterprise AI Conversation Studio** — an admin platform to **monitor, evaluate, test, govern, and optimize** a fleet of AI assistants (HR, Finance, Legal, Support, Sales, and more) across any AI provider.
 
-> Think **LangSmith + Promptfoo + OpenAI Playground + Admin Dashboard + Analytics** combined into one product. It is an *admin control plane* for AI assistants — **not** another chatbot.
-
 ---
 
 ## 👥 Team
 
-- **Team Name:** _<add here>_
-- **Team Members:** _<add here>_
-- **College Name:** _<add here>_
+- **Team Name:** _<Syntax Girls>_
+- **Team Members:** _<Jiya Kothari, Vishwa Bhalodiya>_
+- **College Name:** _<Charusat University>_
 
 ---
 
